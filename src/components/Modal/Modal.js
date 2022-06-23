@@ -1,40 +1,36 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import s from './Modal.module.css';
+import { useEffect } from 'react';
 
-export default class Modal extends Component {
-    componentDidMount() {
-        window.addEventListener('keydown', this.onKeyEscape);
-    }
+export default function Modal({ link, alt, modalToggle }) {
+    useEffect(() => {
+        window.addEventListener('keydown', onKeyEscape);
 
-    componentWillUnmount() {
-        window.removeEventListener('keydown', this.onKeyEscape);
-    }
+        return () => {
+            window.removeEventListener('keydown', onKeyEscape);
+        };
+    });
 
-    onKeyEscape = e => {
+    const onKeyEscape = e => {
         if (e.code === 'Escape') {
-            this.props.modalToggle();
+            modalToggle();
         }
     };
 
-    onBackdropClick = e => {
+    const onBackdropClick = e => {
         if (e.target === e.currentTarget) {
-            this.props.modalToggle();
+            modalToggle();
         }
     };
 
-    render() {
-        const { link, alt } = this.props;
-
-        return (
-            <div className={s.backdrop} onClick={e => this.onBackdropClick(e)}>
-                <div className={s.modal}>
-                    <img src={link} alt={alt} />
-                </div>
+    return (
+        <div className={s.backdrop} onClick={e => onBackdropClick(e)}>
+            <div className={s.modal}>
+                <img src={link} alt={alt} />
             </div>
-        );
-    }
+        </div>
+    );
 }
 
 Modal.propTypes = {

@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import ImageGallery from './ImageGallery/ImageGallery';
 import SearchBar from './Searchbar/SearchBar';
 import ServiceApi from '../services/ServiceApi';
@@ -6,86 +5,69 @@ import Loader from './Loader/Loader';
 import Button from './Button/Button';
 import Modal from './Modal/Modal';
 
-export class App extends Component {
-    state = {
-        search: '',
-        page: 1,
-        images: [],
-        image: {},
-        modalOpen: false,
-        loading: false,
-        contentAvailable: false,
-    };
+import { useEffect, useState } from 'react';
 
-    componentDidUpdate(prevProps, prevState) {
-        const { search } = this.state;
-        const { page } = this.state;
+export function App() {
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [images, setImages] = useState([]);
+    const [image, setImage] = useState({});
+    const [modalOpen, setModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [contentAvailable, setContentAvailable] = useState(false);
 
-        if (prevState.search !== search) {
-            this.setState({ page: 1, loading: true, images: [] });
+    useEffect(() => {
+        setImages([]);
+        setPage(1);
+    }, [search]);
 
-            ServiceApi(search, page).then(res =>
-                this.setState({
-                    images: res.hits,
-                    loading: false,
-                    contentAvailable: res.hits.length === 12,
-                })
-            );
+    useEffect(() => {
+        if (!search) {
+            return;
         }
 
-        if (prevState.page < page) {
-            this.setState({ loading: true });
+        if (page > 1) {
+            setLoading(true);
 
-            ServiceApi(search, page).then(res =>
-                this.setState(prevState => ({
-                    images: [...prevState.images, ...res.hits],
-                    loading: false,
-                    contentAvailable: res.hits.length === 12,
-                }))
-            );
+            ServiceApi(search, page).then(res => {
+                setLoading(false);
+                setImages(prev => [...prev, ...res.hits]);
+                setContentAvailable(res.hits.length === 12);
+            });
+
+            return;
         }
-    }
 
-    onSubmit = search => {
-        this.setState({ search });
+        setLoading(true);
+
+        ServiceApi(search, page).then(res => {
+            setLoading(false);
+            setImages(res.hits);
+            setContentAvailable(res.hits.length === 12);
+        });
+    }, [search, page]);
+
+    const onImageClick = id => {
+        const openedImage = images.find(item => item.id === id);
+        setImage(openedImage);
+        modalToggle();
     };
 
-    onButtonClick = () => {
-        this.setState(prevState => ({
-            page: prevState.page + 1,
-        }));
+    const modalToggle = () => {
+        setModalOpen(prev => !prev);
     };
 
-    onImageClick = id => {
-        const image = this.state.images.find(item => item.id === id);
-        this.setState({ image });
-        this.modalToggle();
-    };
+    const contentLoaded = contentAvailable && !loading;
 
-    modalToggle = () => {
-        this.setState(prevState => ({
-            modalOpen: !prevState.modalOpen,
-        }));
-    };
-
-    render() {
-        const { image, images, loading, modalOpen, contentAvailable } = this.state;
-        const contentLoaded = contentAvailable && !loading;
-
-        return (
-            <main>
-                <SearchBar onSubmit={this.onSubmit} />
-                <ImageGallery images={images} onImageClick={this.onImageClick} />
-                {loading && <Loader />}
-                {contentLoaded && <Button onButtonClick={this.onButtonClick} />}
-                {modalOpen && (
-                    <Modal
-                        link={image.largeImageURL}
-                        alt={image.tags}
-                        modalToggle={this.modalToggle}
-                    />
-                )}
-            </main>
-        );
-    }
+    return (
+        <main>
+            <SearchBar onSubmit={setSearch} />
+            <ImageGallery images={images} onImageClick={onImageClick} />
+            {loading && <Loader />}
+            {contentLoaded && <Button onButtonClick={() => setPage(prev => prev + 1)} />}
+            {modalOpen && (
+                <Modal link={image.largeImageURL} alt={image.tags} modalToggle={modalToggle} />
+            )}
+        </main>
+    );
 }
