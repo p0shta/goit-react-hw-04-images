@@ -5,18 +5,18 @@ import { useEffect } from 'react';
 
 export default function Modal({ link, alt, modalToggle }) {
     useEffect(() => {
+        const onKeyEscape = e => {
+            if (e.code === 'Escape') {
+                modalToggle();
+            }
+        };
+
         window.addEventListener('keydown', onKeyEscape);
 
         return () => {
             window.removeEventListener('keydown', onKeyEscape);
         };
-    });
-
-    const onKeyEscape = e => {
-        if (e.code === 'Escape') {
-            modalToggle();
-        }
-    };
+    }, [modalToggle]);
 
     const onBackdropClick = e => {
         if (e.target === e.currentTarget) {
